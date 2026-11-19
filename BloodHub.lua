@@ -1,9 +1,11 @@
 -- ============================================================
--- BLOOD HUB — DA HOOD | V1.0 (arquivo único, corrigido)
+-- BLOOD HUB — DA HOOD | V1.0
+-- Arquivo único, universal, corrigido
 -- Uso: loadstring(game:HttpGet("SUA_URL_RAW"))()
+-- Toggle: RightShift
 -- ============================================================
 
--- Cleanup de execução anterior
+-- Cleanup de execução anterior (seguro)
 if _G.BloodHub and _G.BloodHub.Cleanup then
     pcall(_G.BloodHub.Cleanup)
 end
@@ -14,6 +16,7 @@ local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 local LP = Players.LocalPlayer
 
+-- Parent seguro da GUI
 local function getParent()
     if type(gethui) == "function" then
         local ok, h = pcall(gethui); if ok and h then return h end
@@ -57,11 +60,12 @@ function H.Track(conn)
     return conn
 end
 
--- UI helpers
+-- ========== UI HELPERS ==========
 function H.Corner(p, r)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, r or 8)
     c.Parent = p
+    return c
 end
 
 function H.Label(parent, text, order, color, size)
@@ -157,7 +161,9 @@ function H.Slider(parent, label, minV, maxV, default, order, cb)
         if cb then cb(v) end
     end
     bar.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = true; upd(i) end
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            drag = true; upd(i)
+        end
     end)
     H.Track(UIS.InputChanged:Connect(function(i)
         if drag and i.UserInputType == Enum.UserInputType.MouseMovement then upd(i) end
@@ -168,7 +174,7 @@ function H.Slider(parent, label, minV, maxV, default, order, cb)
     return f
 end
 
--- ESP core
+-- ========== ESP CORE ==========
 local function validChar(p)
     local c = p.Character
     if not c then return nil end
@@ -298,17 +304,17 @@ function H.Cleanup()
     H.StopESP()
     H.ClearESP()
     if H.Gui then pcall(function() H.Gui:Destroy() end) end
+    if H.Loading then pcall(function() H.Loading:Destroy() end) end
     _G.BloodHub = nil
 end
 
--- ============================================================
--- INTERFACE
--- ============================================================
+-- ========== LOADING SCREEN ==========
 local loading = Instance.new("ScreenGui")
 loading.Name = "BloodHub_Loading"
 loading.ResetOnSpawn = false
 loading.IgnoreGuiInset = true
 loading.Parent = H.Parent
+H.Loading = loading
 
 local lbg = Instance.new("Frame")
 lbg.Size = UDim2.fromScale(1,1)
@@ -366,6 +372,7 @@ task.delay(2.7, function()
     tw.Completed:Wait()
     loading:Destroy()
 
+    -- ========== MAIN UI ==========
     local gui = Instance.new("ScreenGui")
     gui.Name = "BloodHub_Main"
     gui.ResetOnSpawn = false
@@ -716,4 +723,4 @@ task.delay(2.7, function()
 end)
 
 _G.BloodHub = H
-print("[BLOOD HUB] Carregado. Pressione RightShift para abrir/fechar.")
+print("[BLOOD HUB] Carregado com sucesso. Pressione RightShift para abrir/fechar.")
