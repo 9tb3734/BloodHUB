@@ -1,8 +1,11 @@
 -- ============================================================
--- BLOOD HUB — PARTE 1/2 (NÚCLEO)
+-- BLOOD HUB — DA HOOD | V1.0 (arquivo único, corrigido)
+-- Uso: loadstring(game:HttpGet("SUA_URL_RAW"))()
 -- ============================================================
-if _G.BloodHub and _G.BloodHub.Destroy then
-    pcall(_G.BloodHub.Destroy)
+
+-- Cleanup de execução anterior
+if _G.BloodHub and _G.BloodHub.Cleanup then
+    pcall(_G.BloodHub.Cleanup)
 end
 
 local Players = game:GetService("Players")
@@ -11,7 +14,6 @@ local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 local LP = Players.LocalPlayer
 
--- Parent seguro da GUI
 local function getParent()
     if type(gethui) == "function" then
         local ok, h = pcall(gethui); if ok and h then return h end
@@ -30,31 +32,24 @@ local function getParent()
 end
 
 local Theme = {
-    Bg = Color3.fromRGB(18,18,18),
-    Sf = Color3.fromRGB(28,28,28),
-    Ac = Color3.fromRGB(180,20,20),
+    Bg  = Color3.fromRGB(18,18,18),
+    Sf  = Color3.fromRGB(28,28,28),
+    Ac  = Color3.fromRGB(180,20,20),
     AcB = Color3.fromRGB(220,30,30),
-    Tx = Color3.fromRGB(240,240,240),
+    Tx  = Color3.fromRGB(240,240,240),
     TxD = Color3.fromRGB(160,160,160),
-    Ou = Color3.fromRGB(50,50,50),
+    Ou  = Color3.fromRGB(50,50,50),
 }
 
-local H = {}  -- Hub namespace
-
+local H = {}
 H.LP = LP
 H.Parent = getParent()
 H.Connections = {}
 H.ESP = {
-    enabled = false,
-    range = 300,
-    names = true,
-    dist = true,
-    mode = "ALL",
-    selected = nil,
-    outline = Color3.fromRGB(255,20,20),
-    fill = Color3.fromRGB(255,0,0),
-    active = {},
-    conns = {},
+    enabled = false, range = 300, names = true, dist = true,
+    mode = "ALL", selected = nil,
+    outline = Color3.fromRGB(255,20,20), fill = Color3.fromRGB(255,0,0),
+    active = {}, conns = {},
 }
 
 function H.Track(conn)
@@ -62,15 +57,7 @@ function H.Track(conn)
     return conn
 end
 
-function H.Cleanup()
-    for _, c in ipairs(H.Connections) do pcall(function() c:Disconnect() end) end
-    H.Connections = {}
-    for p in pairs(H.ESP.active) do H.RemoveESP(p) end
-    for _, c in ipairs(H.ESP.conns) do pcall(function() c:Disconnect() end) end
-    H.ESP.conns = {}
-end
-
--- ---------- UI helpers ----------
+-- UI helpers
 function H.Corner(p, r)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, r or 8)
@@ -170,9 +157,7 @@ function H.Slider(parent, label, minV, maxV, default, order, cb)
         if cb then cb(v) end
     end
     bar.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then
-            drag = true; upd(i)
-        end
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = true; upd(i) end
     end)
     H.Track(UIS.InputChanged:Connect(function(i)
         if drag and i.UserInputType == Enum.UserInputType.MouseMovement then upd(i) end
@@ -183,7 +168,7 @@ function H.Slider(parent, label, minV, maxV, default, order, cb)
     return f
 end
 
--- ---------- ESP core ----------
+-- ESP core
 local function validChar(p)
     local c = p.Character
     if not c then return nil end
@@ -307,31 +292,18 @@ function H.ClearESP()
     for p in pairs(H.ESP.active) do H.RemoveESP(p) end
 end
 
-print("[BLOOD HUB] Parte 1 carregada. Execute a Parte 2.")
-
--- ============================================================
--- BLOOD HUB — PARTE 2/2 (INTERFACE)
--- ============================================================
-if not _G.BloodHub then
-    warn("[BLOOD HUB] Execute a Parte 1 primeiro.")
-    return
+function H.Cleanup()
+    for _, c in ipairs(H.Connections) do pcall(function() c:Disconnect() end) end
+    H.Connections = {}
+    H.StopESP()
+    H.ClearESP()
+    if H.Gui then pcall(function() H.Gui:Destroy() end) end
+    _G.BloodHub = nil
 end
-local H = _G.BloodHub
-local Theme = {
-    Bg = Color3.fromRGB(18,18,18),
-    Sf = Color3.fromRGB(28,28,28),
-    Ac = Color3.fromRGB(180,20,20),
-    AcB = Color3.fromRGB(220,30,30),
-    Tx = Color3.fromRGB(240,240,240),
-    TxD = Color3.fromRGB(160,160,160),
-    Ou = Color3.fromRGB(50,50,50),
-}
-local LP = H.LP
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
 
--- Loading
+-- ============================================================
+-- INTERFACE
+-- ============================================================
 local loading = Instance.new("ScreenGui")
 loading.Name = "BloodHub_Loading"
 loading.ResetOnSpawn = false
@@ -380,6 +352,7 @@ lfill.Parent = lbar
 H.Corner(lfill, 4)
 
 TweenService:Create(lfill, TweenInfo.new(2.2, Enum.EasingStyle.Quad), {Size = UDim2.fromScale(1,1)}):Play()
+
 task.delay(2.7, function()
     local tw = TweenService:Create(lbg, TweenInfo.new(0.5), {BackgroundTransparency = 1})
     for _, v in ipairs(lbg:GetDescendants()) do
@@ -393,7 +366,6 @@ task.delay(2.7, function()
     tw.Completed:Wait()
     loading:Destroy()
 
-    -- ===== MAIN UI =====
     local gui = Instance.new("ScreenGui")
     gui.Name = "BloodHub_Main"
     gui.ResetOnSpawn = false
@@ -458,7 +430,6 @@ task.delay(2.7, function()
     H.SetOpen = setOpen
     close.MouseButton1Click:Connect(function() setOpen(false) end)
 
-    -- Tab bar
     local tabBar = Instance.new("Frame")
     tabBar.Size = UDim2.new(1,0,0,36)
     tabBar.Position = UDim2.new(0,0,0,42)
@@ -510,7 +481,6 @@ task.delay(2.7, function()
         end)
     end
 
-    -- Drag
     local drag, dStart, sPos = false, nil, nil
     header.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -527,7 +497,6 @@ task.delay(2.7, function()
         end
     end))
 
-    -- Hotkey RightShift
     H.Track(UIS.InputBegan:Connect(function(i, gp)
         if gp then return end
         if i.KeyCode == Enum.KeyCode.RightShift then
@@ -535,7 +504,7 @@ task.delay(2.7, function()
         end
     end))
 
-    -- ===== PLAYER TAB =====
+    -- PLAYER TAB
     local pt = frames["PLAYER"]
     H.Label(pt, "PLAYER INFORMATION", 1, Theme.AcB, 15)
     local nameL = H.Label(pt, "Name: "..LP.Name, 2)
@@ -561,10 +530,9 @@ task.delay(2.7, function()
         if h then h.Health = 0 end
     end)
 
-    -- ===== VISUALS TAB =====
+    -- VISUALS TAB
     local vt = frames["VISUALS"]
     H.Label(vt, "BLOOD ESP", 1, Theme.AcB, 15)
-
     H.Toggle(vt, "Enable ESP", false, 2, function(s)
         H.ESP.enabled = s
         if s then H.StartESP() else H.ClearESP() end
@@ -574,7 +542,6 @@ task.delay(2.7, function()
     H.Slider(vt, "Range", 50, 1000, 300, 5, function(v) H.ESP.range = v end)
 
     H.Label(vt, "SELECTION MODE", 6, Theme.TxD, 12)
-
     local mf = Instance.new("Frame")
     mf.Size = UDim2.new(1,0,0,34)
     mf.BackgroundTransparency = 1
@@ -686,7 +653,7 @@ task.delay(2.7, function()
     cf.LayoutOrder = 10
     cf.Parent = vt
 
-    local function colorBtn(text, pos, col, order)
+    local function colorBtn(text, pos, col)
         local b = Instance.new("TextButton")
         b.Size = UDim2.new(0.31,0,1,0)
         b.Position = UDim2.new(pos,0,0,0)
@@ -712,7 +679,7 @@ task.delay(2.7, function()
         H.ClearESP()
     end)
 
-    -- ===== MISC TAB =====
+    -- MISC TAB
     local mt = frames["MISC"]
     H.Label(mt, "MISC", 1, Theme.AcB, 15)
     H.Toggle(mt, "Anti-AFK", false, 2, function(s)
@@ -728,7 +695,7 @@ task.delay(2.7, function()
     end)
     H.Label(mt, "Sessão iniciada: "..os.date("%H:%M:%S"), 3, Theme.TxD, 12)
 
-    -- ===== SETTINGS TAB =====
+    -- SETTINGS TAB
     local st = frames["SETTINGS"]
     H.Label(st, "SETTINGS", 1, Theme.AcB, 15)
     H.Button(st, "HIDE PANEL", 2, Theme.Ac, function() setOpen(false) end)
@@ -749,4 +716,4 @@ task.delay(2.7, function()
 end)
 
 _G.BloodHub = H
-print("[BLOOD HUB] Parte 2 carregada. Pressione RightShift.")
+print("[BLOOD HUB] Carregado. Pressione RightShift para abrir/fechar.")
