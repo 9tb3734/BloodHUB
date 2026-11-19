@@ -820,4 +820,162 @@ task.delay(2.7, function()
     colorBtn("BLUE", 0.345, Color3.fromRGB(30,100,255))
     colorBtn("GREEN", 0.69, Color3.fromRGB(30,220,100))
 
-   
+    H.Button(vt, "CLEAR HIGHLIGHTS", 11, Theme.Ac, function()
+        H.ClearESP()
+    end)
+
+    -- ========== [NOVO] AIMBOT TAB ==========
+    local at = frames["AIMBOT"]
+    H.Label(at, "AIMBOT", 1, Theme.AcB, 15)
+    H.Toggle(at, "Enable Aimbot", false, 2, function(s)
+        H.Aimbot.enabled = s
+        if s then H.StartAimbot() else H.StopAimbot() end
+    end)
+    H.Toggle(at, "Team Check", false, 3, function(s) H.Aimbot.teamCheck = s end)
+    H.Toggle(at, "Wall Check", true, 4, function(s) H.Aimbot.wallCheck = s end)
+    H.Label(at, "Aim Part", 5, Theme.TxD, 12)
+    local apf = Instance.new("Frame")
+    apf.Size = UDim2.new(1,0,0,34)
+    apf.BackgroundTransparency = 1
+    apf.LayoutOrder = 6
+    apf.Parent = at
+    local headB = Instance.new("TextButton")
+    headB.Size = UDim2.new(0.48,0,1,0)
+    headB.BackgroundColor3 = Theme.Ac
+    headB.Text = "HEAD"
+    headB.TextColor3 = Theme.Tx
+    headB.Font = Enum.Font.GothamBold
+    headB.TextSize = 12
+    headB.BorderSizePixel = 0
+    headB.Parent = apf
+    H.Corner(headB, 6)
+    local hrpB = Instance.new("TextButton")
+    hrpB.Size = UDim2.new(0.48,0,1,0)
+    hrpB.Position = UDim2.new(0.52,0,0,0)
+    hrpB.BackgroundColor3 = Theme.Sf
+    hrpB.Text = "ROOT"
+    hrpB.TextColor3 = Theme.Tx
+    hrpB.Font = Enum.Font.GothamBold
+    hrpB.TextSize = 12
+    hrpB.BorderSizePixel = 0
+    hrpB.Parent = apf
+    H.Corner(hrpB, 6)
+    headB.MouseButton1Click:Connect(function()
+        H.Aimbot.part = "Head"
+        headB.BackgroundColor3 = Theme.Ac
+        hrpB.BackgroundColor3 = Theme.Sf
+    end)
+    hrpB.MouseButton1Click:Connect(function()
+        H.Aimbot.part = "HumanoidRootPart"
+        headB.BackgroundColor3 = Theme.Sf
+        hrpB.BackgroundColor3 = Theme.Ac
+    end)
+    H.Slider(at, "Smoothness x100", 0, 100, 15, 7, function(v) H.Aimbot.smoothness = v / 100 end)
+
+    H.Label(at, "TARGET SELECTION", 8, Theme.TxD, 12)
+    local aimList = Instance.new("ScrollingFrame")
+    aimList.Size = UDim2.new(1,0,0,180)
+    aimList.BackgroundColor3 = Theme.Sf
+    aimList.BorderSizePixel = 0
+    aimList.ScrollBarThickness = 3
+    aimList.LayoutOrder = 9
+    aimList.Parent = at
+    H.Corner(aimList, 6)
+    local alL = Instance.new("UIListLayout")
+    alL.Padding = UDim.new(0,2)
+    alL.Parent = aimList
+
+    local function refreshAimList()
+        for _, c in ipairs(aimList:GetChildren()) do
+            if c:IsA("TextButton") or c:IsA("TextLabel") then c:Destroy() end
+        end
+        local list = {}
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LP then
+                local c = p.Character
+                local h = c and c:FindFirstChildOfClass("Humanoid")
+                if h and h.Health > 0 then table.insert(list, p) end
+            end
+        end
+        if #list == 0 then
+            local e = Instance.new("TextLabel")
+            e.Size = UDim2.new(1,0,0,30)
+            e.BackgroundTransparency = 1
+            e.Text = "Nenhum jogador disponível"
+            e.TextColor3 = Theme.TxD
+            e.TextSize = 12
+            e.Font = Enum.Font.Gotham
+            e.Parent = aimList
+            return
+        end
+        for _, p in ipairs(list) do
+            local b = Instance.new("TextButton")
+            b.Size = UDim2.new(1,-6,0,28)
+            b.BackgroundColor3 = (H.Aimbot.target == p) and Theme.Ac or Theme.Bg
+            b.Text = "  "..p.Name
+            b.TextColor3 = Theme.Tx
+            b.TextSize = 12
+            b.Font = Enum.Font.Gotham
+            b.TextXAlignment = Enum.TextXAlignment.Left
+            b.BorderSizePixel = 0
+            b.Parent = aimList
+            H.Corner(b, 4)
+            b.MouseButton1Click:Connect(function()
+                H.Aimbot.target = p
+                refreshAimList()
+            end)
+        end
+    end
+    refreshAimList()
+    H.Track(Players.PlayerAdded:Connect(function() task.wait(0.5); refreshAimList() end))
+    H.Track(Players.PlayerRemoving:Connect(function() task.wait(0.2); refreshAimList() end))
+    H.Track(LP.CharacterAdded:Connect(function() task.wait(0.5); refreshAimList() end))
+
+    local clearT = H.Button(at, "CLEAR TARGET", 10, Theme.Ac, function()
+        H.Aimbot.target = nil
+        refreshAimList()
+    end)
+
+    -- ========== MISC TAB ==========
+    local mt = frames["MISC"]
+    H.Label(mt, "MISC", 1, Theme.AcB, 15)
+    H.Toggle(mt, "Anti-AFK", false, 2, function(s)
+        if s then
+            H.AntiAFKConn = LP.Idled:Connect(function()
+                local vu = game:GetService("VirtualUser")
+                vu:CaptureController()
+                vu:ClickButton2(Vector2.new())
+            end)
+        else
+            if H.AntiAFKConn then pcall(function() H.AntiAFKConn:Disconnect() end) end
+        end
+    end)
+    H.Label(mt, "Sessão iniciada: "..os.date("%H:%M:%S"), 3, Theme.TxD, 12)
+
+    -- ========== SETTINGS TAB ==========
+    local st = frames["SETTINGS"]
+    H.Label(st, "SETTINGS", 1, Theme.AcB, 15)
+    H.Button(st, "HIDE PANEL", 2, Theme.Ac, function() setOpen(false) end)
+    H.Button(st, "RESET CONFIG", 3, Theme.Ac, function()
+        H.ESP.range = 300
+        H.ESP.names = true
+        H.ESP.dist = true
+        H.ESP.mode = "ALL"
+        H.ESP.outline = Color3.fromRGB(255,20,20)
+        H.ESP.fill = Color3.fromRGB(255,0,0)
+        H.ClearESP()
+        H.WalkSpeedValue = 16
+        H.JumpPowerValue = 50
+        H.Aimbot.target = nil
+        H.Aimbot.enabled = false
+        H.StopAimbot()
+    end)
+    H.Label(st, "Toggle: RightShift", 4, Theme.TxD, 12)
+
+    H.SetOpen(false)
+    task.wait(0.1)
+    setOpen(true)
+end)
+
+_G.BloodHub = H
+print("[BLOOD HUB] Carregado com sucesso. Pressione RightShift para abrir/fechar.")
